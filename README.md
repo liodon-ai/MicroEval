@@ -1,6 +1,6 @@
-# MiniEval
+# MicroEval
 
-MiniEval is a tiny, dependency-light toolkit to quickly evaluate NLP/LLM outputs. It's designed for fast smoke-tests and demos — not to replace heavyweight benchmarks.
+MicroEval is a tiny, dependency-light toolkit to quickly evaluate NLP/LLM outputs. It's designed for fast smoke-tests and demos — not to replace heavyweight benchmarks.
 
 ## Features
 - Simple n-gram perplexity
@@ -15,3 +15,4 @@ MiniEval is a tiny, dependency-light toolkit to quickly evaluate NLP/LLM outputs
 pip install numpy nltk
 # optional grammar checks:
 # pip install language-tool-python
+```
