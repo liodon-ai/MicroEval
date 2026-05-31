@@ -10,6 +10,28 @@ def bootstrap_ci(
     ci: float = 0.95,
     seed: Optional[int] = None,
 ) -> dict:
+    """Compute bootstrap confidence interval for a metric over samples.
+
+    Uses the percentile bootstrap method: resamples with replacement,
+    computes the metric on each resample, and takes percentiles.
+
+    Args:
+        samples: List of observed values.
+        metric: Function that computes a statistic from a list of floats.
+            Defaults to the arithmetic mean.
+        num_resamples: Number of bootstrap resamples (default: 1000).
+        ci: Confidence level (default: 0.95 for 95% CI).
+        seed: Optional random seed for reproducibility.
+
+    Returns:
+        dict with keys:
+            - "estimate": metric on original samples
+            - "lower": lower bound of CI
+            - "upper": upper bound of CI
+            - "std_err": standard error (std of bootstrap distribution)
+            - "ci_level": requested confidence level
+            - "num_resamples": number of resamples
+    """
     if seed is not None:
         random.seed(seed)
 
@@ -42,6 +64,23 @@ def bootstrap_pvalue(
     num_resamples: int = 1000,
     seed: Optional[int] = None,
 ) -> dict:
+    """Compute a permutation p-value for the difference of means.
+
+    Shuffles group labels and counts how often the permuted difference
+    exceeds the observed difference.
+
+    Args:
+        group_a: Scores from model A.
+        group_b: Scores from model B.
+        num_resamples: Number of permutations (default: 1000).
+        seed: Optional random seed for reproducibility.
+
+    Returns:
+        dict with keys:
+            - "observed_diff": mean(group_a) - mean(group_b)
+            - "p_value": two-sided permutation p-value
+            - "num_resamples": number of permutations
+    """
     if seed is not None:
         random.seed(seed)
 

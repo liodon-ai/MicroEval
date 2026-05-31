@@ -1,21 +1,45 @@
-import itertools
 import logging
-from typing import Any, List, Dict
-from statistics import mean, stdev
+from typing import Any, Dict
+from statistics import mean
 
 logger = logging.getLogger(__name__)
 
 
 class JudgeCalibration:
+    """Measure biases and reliability of an LLM judge.
+
+    Runs a battery of controlled tests to quantify:
+    - Position bias: does the judge prefer answer A or B regardless of content?
+    - Consistency: does the judge give the same answer repeatedly?
+    - Length bias: does the judge prefer longer answers?
+    - Self-enhancement bias: does the judge prefer answers that praise it?
+    """
+
     def evaluate(self, judge: Any, num_samples: int = 20) -> Dict[str, float]:
+        """Run all calibration tests and return a report.
+
+        Args:
+            judge: A judge object with a ``compare()`` method.
+            num_samples: Number of trials per test (default: 20).
+
+        Returns:
+            dict with keys:
+                - "position_bias": 0.0 = no bias, 1.0 = always prefers position A
+                - "consistency": 1.0 = perfectly consistent, 0.0 = random
+                - "length_bias": >0 prefers long, <0 prefers short
+                - "self_enhancement_bias": >0 prefers self-praise
+        """
         report = {}
         report["position_bias"] = self._measure_position_bias(judge, num_samples)
         report["consistency"] = self._measure_consistency(judge, num_samples)
         report["length_bias"] = self._measure_length_bias(judge, num_samples)
-        report["self_enhancement_bias"] = self._measure_self_enhancement(judge, num_samples)
+        report["self_enhancement_bias"] = self._measure_self_enhancement(
+            judge, num_samples
+        )
         return report
 
     def _measure_position_bias(self, judge: Any, n: int) -> float:
+        """Check if judge consistently prefers A or B when answers are identical."""
         from microeval.judges.pairwise import PairwiseJudge
 
         if not isinstance(judge, PairwiseJudge):
@@ -37,6 +61,7 @@ class JudgeCalibration:
         return abs(a_count - b_count) / total
 
     def _measure_consistency(self, judge: Any, n: int) -> float:
+        """Check if judge gives the same answer when repeated."""
         question = "What is the capital of France?"
         answer_a = "Paris"
         answer_b = "London"
@@ -52,6 +77,7 @@ class JudgeCalibration:
         return results.count(majority) / len(results)
 
     def _measure_length_bias(self, judge: Any, n: int) -> float:
+        """Check if judge prefers longer answers by swapping position."""
         base_answer = "The answer is 42."
         long_answer = (
             "The answer is 42. Let me explain why. First, "
@@ -85,6 +111,7 @@ class JudgeCalibration:
         return (prefer_long - prefer_short) / total
 
     def _measure_self_enhancement(self, judge: Any, n: int) -> float:
+        """Check if judge prefers answers that praise it."""
         judge_name = getattr(judge, "model", "unknown")
         self_answer = f"I am {judge_name}, a highly capable AI assistant."
         other_answer = "I am a simple rule-based system."

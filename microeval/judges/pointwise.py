@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from typing import Optional
 
@@ -6,6 +7,17 @@ logger = logging.getLogger(__name__)
 
 
 class PointwiseJudge:
+    """LLM-as-a-Judge for scoring a single answer on a 0-10 scale.
+
+    Args:
+        model: LLM model name (default: "gpt-4").
+        api_key: OpenAI API key. Falls back to OPENAI_API_KEY env var.
+        temperature: Sampling temperature (default: 0.0).
+        max_retries: Number of retry attempts on API failure (default: 3).
+        prompt_template: Custom prompt template. Must have {question},
+            {answer}, {rubric} placeholders.
+    """
+
     def __init__(
         self,
         model: str = "gpt-4",
@@ -21,6 +33,18 @@ class PointwiseJudge:
         self._prompt_template = prompt_template or DEFAULT_POINTWISE_PROMPT
 
     def score(self, answer: str, question: str = "", rubric: str = "") -> dict:
+        """Score a single answer on a 0-1 scale (extracted from X/10 output).
+
+        Args:
+            answer: The answer string to evaluate.
+            question: Optional question that produced the answer.
+            rubric: Optional scoring rubric / criteria.
+
+        Returns:
+            dict with keys:
+                - "score": float between 0.0 and 1.0
+                - "reason": Raw LLM response text
+        """
         for attempt in range(self.max_retries):
             try:
                 result = self._call_judge(question, answer, rubric)
@@ -51,8 +75,6 @@ class PointwiseJudge:
         return response.choices[0].message.content.strip()
 
     def _parse_result(self, raw: str) -> dict:
-        import re
-
         scores = re.findall(r"(\d+(?:\.\d+)?)\s*/\s*10", raw)
         if scores:
             return {"score": float(scores[0]) / 10.0, "reason": raw}

@@ -94,9 +94,20 @@ report = pv.analyze("What is 2+2?")
 
 ```bash
 pip install microeval[lmeval]
-lm-eval --model hf --model_args pretrained=gpt2 \
-  --tasks my_task \
-  --include_path "$(python -c 'import microeval.lmeval; print(microeval.lmeval.__path__[0])')"
+python -c "from microeval.lmeval import register_all; register_all()"
+
+# Then register pairwise_judge / pointwise_judge metrics in your task YAML:
+# metric_list:
+#   - metric: pairwise_judge
+#     aggregation: mean
+#     higher_is_better: true
+```
+
+### Running Tests
+
+```bash
+pip install pytest
+pytest tests/ -v
 ```
 
 ## License

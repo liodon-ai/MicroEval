@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from typing import Optional
@@ -7,6 +6,20 @@ logger = logging.getLogger(__name__)
 
 
 class PairwiseJudge:
+    """LLM-as-a-Judge for pairwise comparison of two answers.
+
+    Uses an LLM (e.g. GPT-4) to compare two answers to the same question
+    and decide which is better. Supports retry with exponential backoff.
+
+    Args:
+        model: LLM model name (default: "gpt-4").
+        api_key: OpenAI API key. Falls back to OPENAI_API_KEY env var.
+        temperature: Sampling temperature (default: 0.0).
+        max_retries: Number of retry attempts on API failure (default: 3).
+        prompt_template: Custom prompt template. Must have {question},
+            {answer_a}, {answer_b} placeholders.
+    """
+
     def __init__(
         self,
         model: str = "gpt-4",
@@ -22,6 +35,19 @@ class PairwiseJudge:
         self._prompt_template = prompt_template or DEFAULT_PAIRWISE_PROMPT
 
     def compare(self, answer_a: str, answer_b: str, question: str = "") -> dict:
+        """Compare two answers and determine the better one.
+
+        Args:
+            answer_a: First answer string.
+            answer_b: Second answer string.
+            question: Optional question/prompt that produced the answers.
+
+        Returns:
+            dict with keys:
+                - "winner": "A", "B", or "tie"
+                - "score": 1.0 (A wins), 0.0 (B wins), or 0.5 (tie)
+                - "reason": Raw LLM response text
+        """
         for attempt in range(self.max_retries):
             try:
                 result = self._call_judge(question, answer_a, answer_b)

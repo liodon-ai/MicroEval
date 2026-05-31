@@ -9,6 +9,19 @@ def win_rate(
     scores_b: List[float],
     higher_is_better: bool = True,
 ) -> Dict[str, float]:
+    """Compute pairwise win/tie/loss rates between two sets of scores.
+
+    Each position i in scores_a is compared against scores_b[i].
+
+    Args:
+        scores_a: Scores from model A (paired with scores_b).
+        scores_b: Scores from model B.
+        higher_is_better: If True, higher score = win (default: True).
+
+    Returns:
+        dict with keys "win_rate", "tie_rate", "loss_rate" (0-1 each),
+        and "num_comparisons".
+    """
     wins = 0
     ties = 0
     losses = 0
@@ -45,12 +58,30 @@ def compare_models(
     num_resamples: int = 1000,
     seed: Optional[int] = None,
 ) -> Dict[str, float]:
+    """Full head-to-head comparison of two models.
+
+    Combines win-rate analysis with bootstrap confidence intervals
+    and permutation p-value.
+
+    Args:
+        scores_a: Scores from model A.
+        scores_b: Scores from model B.
+        higher_is_better: If True, higher score = win.
+        num_resamples: Bootstrap/permutation resamples (default: 1000).
+        seed: Optional random seed.
+
+    Returns:
+        dict with keys: "win_rate", "tie_rate", "loss_rate", "mean_a",
+        "mean_b", "ci_lower", "ci_upper", "p_value", "num_resamples".
+    """
     wr = win_rate(scores_a, scores_b, higher_is_better)
 
     all_scores = scores_a + scores_b
     ci = bootstrap_ci(all_scores, num_resamples=num_resamples, seed=seed)
 
-    pval = bootstrap_pvalue(scores_a, scores_b, num_resamples=num_resamples, seed=seed)
+    pval = bootstrap_pvalue(
+        scores_a, scores_b, num_resamples=num_resamples, seed=seed
+    )
 
     return {
         "win_rate": wr["win_rate"],
