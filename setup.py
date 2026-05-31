@@ -11,6 +11,11 @@ setup(
     url="https://github.com/liodon-ai/juryeval",
     license="MIT",
     packages=find_packages(),
+    entry_points={
+        "console_scripts": [
+            "juryeval=juryeval.cli:main",
+        ],
+    },
     python_requires=">=3.9",
     install_requires=[
         "numpy",
