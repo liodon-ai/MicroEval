@@ -20,6 +20,15 @@
 <a href="https://github.com/pydev42/juryeval">            <img src="docs/logo.svg" class="logo" alt="project logo"/>
 </a>
 
+            <h2>Contents</h2>
+            <ul>
+  <li><a href="#install">Install</a></li>
+  <li><a href="#python-api">Python API</a></li>
+  <li><a href="#cli">CLI</a></li>
+  <li><a href="#framework-integrations">Framework Integrations</a></li>
+  <li><a href="#development">Development</a></li>
+</ul>
+
 
 
             <h2>API Documentation</h2>
@@ -164,202 +173,390 @@
                     <h1 class="modulename">
 juryeval    </h1>
 
-                        <div class="docstring"><p>Lightweight NLP/LLM evaluation toolkit.</p>
+                        <div class="docstring"><p>Lightweight NLP/LLM evaluation toolkit for metrics, LLM-as-Judge,
+statistical significance testing, prompt robustness analysis, and CLI.</p>
 
-<p>JuryEval provides metrics, LLM-as-Judge infrastructure, statistical
-significance testing, and prompt robustness analysis — designed as a
-shared dependency for evaluation frameworks like LM Eval Harness,
-OpenCompass, and Lighteval.</p>
+<p>Designed for fast smoke-tests, demos, and as a drop-in dependency for
+frameworks like LM Eval Harness, DeepEval, Lighteval, and LangChain.</p>
 
-<h6 id="install">Install:</h6>
+<h2 id="install">Install</h2>
 
-<blockquote>
-  <p><code>pip install juryeval</code></p>
-  
-  <p>Optional feature sets:</p>
-  
-  <ul>
-  <li><code>juryeval[judge]</code> — LLM-as-Judge (openai)</li>
-  <li><code>juryeval[semantic]</code> — embedding similarity (sentence-transformers)</li>
-  <li><code>juryeval[lmeval]</code> — lm-eval-harness integration</li>
-  <li><code>juryeval[full]</code> — all metrics (sklearn, sacrebleu, transformers, etc.)</li>
-  <li><code>juryeval[all]</code> — everything</li>
-  </ul>
-</blockquote>
-
-<h6 id="quick-start">Quick Start:</h6>
-
-<blockquote>
-  <p><strong>Metrics:</strong></p>
-  
-  <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_classification</span><span class="p">,</span> <span class="n">perplexity</span><span class="p">,</span> <span class="n">bert_score</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">eval_classification</span><span class="p">([</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="s2">&quot;neg&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="s2">&quot;pos&quot;</span><span class="p">])</span>
-<span class="go">{&#39;accuracy&#39;: 0.5, &#39;f1&#39;: 0.5}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">perplexity</span><span class="p">(</span><span class="s2">&quot;This is a sentence.&quot;</span><span class="p">)</span>
-<span class="go">102.5  # (approximate)</span>
+<div class="pdoc-code codehilite">
+<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>juryeval
 </code></pre>
-  </div>
-  
-  <p><strong>LLM-as-Judge:</strong></p>
-  
-  <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairwiseJudge</span><span class="p">,</span> <span class="n">JudgeCalibration</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">judge</span> <span class="o">=</span> <span class="n">PairwiseJudge</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">judge</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="s2">&quot;Paris is capital.&quot;</span><span class="p">,</span> <span class="s2">&quot;It&#39;s Paris.&quot;</span><span class="p">,</span> <span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">)</span>
-<span class="go">{&#39;winner&#39;: &#39;A&#39;, &#39;score&#39;: 1.0, &#39;reason&#39;: &#39;...&#39;}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">JudgeCalibration</span><span class="p">()</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">judge</span><span class="p">)</span>
-<span class="go">{&#39;position_bias&#39;: 0.05, &#39;consistency&#39;: 0.95, ...}</span>
-</code></pre>
-  </div>
-  
-  <p><strong>Statistical Significance:</strong></p>
-  
-  <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap_ci</span><span class="p">,</span> <span class="n">compare_models</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">bootstrap_ci</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">],</span> <span class="n">num_resamples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
-<span class="go">{&#39;estimate&#39;: 3.0, &#39;lower&#39;: 2.0, &#39;upper&#39;: 4.0, ...}</span>
-</code></pre>
-  </div>
-  
-  <p><strong>Prompt Robustness:</strong></p>
-  
-  <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptVariance</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pv</span> <span class="o">=</span> <span class="n">PromptVariance</span><span class="p">(</span><span class="n">model_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pv</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="s2">&quot;What is 2+2?&quot;</span><span class="p">,</span> <span class="n">num_variants</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="go">{&#39;num_variants&#39;: 3, &#39;output_length_mean&#39;: 6.0, ...}</span>
-</code></pre>
-  </div>
-  
-  <p><strong>LM Eval Harness Integration:</strong></p>
-  
-  <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.lmeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_all</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">register_all</span><span class="p">()</span>  <span class="c1"># registers pairwise_judge, pointwise_judge metrics</span>
-</code></pre>
-  </div>
-</blockquote>
+</div>
 
-<p>Source: <a href="https://github.com/liodon-ai/MicroEval">https://github.com/liodon-ai/MicroEval</a>
-Documentation: <a href="https://liodon-ai.github.io/MicroEval/">https://liodon-ai.github.io/MicroEval/</a></p>
+<p>Optional extras:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Extra</th>
+  <th>What you get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>[judge]</code></td>
+  <td>LLM-as-Judge (openai)</td>
+</tr>
+<tr>
+  <td><code>[semantic]</code></td>
+  <td>Embedding similarity (sentence-transformers)</td>
+</tr>
+<tr>
+  <td><code>[lmeval]</code></td>
+  <td>lm-eval-harness integration</td>
+</tr>
+<tr>
+  <td><code>[full]</code></td>
+  <td>All metrics (sklearn, sacrebleu, transformers, torch, etc.)</td>
+</tr>
+<tr>
+  <td><code>[all]</code></td>
+  <td>Everything</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="python-api">Python API</h2>
+
+<h3 id="metrics">Metrics</h3>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">eval_classification</span><span class="p">,</span> <span class="n">eval_translation</span><span class="p">,</span> <span class="n">eval_summarization</span><span class="p">,</span>
+    <span class="n">perplexity</span><span class="p">,</span> <span class="n">flesch_kincaid</span><span class="p">,</span> <span class="n">bert_score</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">acc_f1</span> <span class="o">=</span> <span class="n">eval_classification</span><span class="p">(</span><span class="n">preds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="s2">&quot;neg&quot;</span><span class="p">],</span> <span class="n">refs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+<span class="n">bleu</span>   <span class="o">=</span> <span class="n">eval_translation</span><span class="p">(</span><span class="n">preds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hello world&quot;</span><span class="p">],</span> <span class="n">refs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bonjour le monde&quot;</span><span class="p">])</span>
+<span class="n">rouge</span>  <span class="o">=</span> <span class="n">eval_summarization</span><span class="p">(</span><span class="n">preds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">],</span> <span class="n">refs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;reference&quot;</span><span class="p">])</span>
+<span class="n">ppl</span>    <span class="o">=</span> <span class="n">perplexity</span><span class="p">(</span><span class="s2">&quot;This is a sentence.&quot;</span><span class="p">)</span>
+<span class="n">fk</span>     <span class="o">=</span> <span class="n">flesch_kincaid</span><span class="p">(</span><span class="s2">&quot;This is easy to read.&quot;</span><span class="p">)</span>
+<span class="n">bs</span>     <span class="o">=</span> <span class="n">bert_score</span><span class="p">(</span><span class="n">preds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;answer&quot;</span><span class="p">],</span> <span class="n">refs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;reference&quot;</span><span class="p">])</span>
+</code></pre>
+</div>
+
+<h3 id="llm-as-judge">LLM-as-Judge</h3>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairwiseJudge</span><span class="p">,</span> <span class="n">PointwiseJudge</span><span class="p">,</span> <span class="n">MultiJudgeEnsemble</span><span class="p">,</span> <span class="n">JudgeCalibration</span>
+
+<span class="c1"># Pairwise comparison</span>
+<span class="n">judge</span> <span class="o">=</span> <span class="n">PairwiseJudge</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">judge</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span>
+    <span class="n">answer_a</span><span class="o">=</span><span class="s2">&quot;Paris is the capital of France.&quot;</span><span class="p">,</span>
+    <span class="n">answer_b</span><span class="o">=</span><span class="s2">&quot;It&#39;s Paris.&quot;</span><span class="p">,</span>
+    <span class="n">question</span><span class="o">=</span><span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># {&quot;winner&quot;: &quot;A&quot;, &quot;score&quot;: 1.0, &quot;reason&quot;: &quot;...&quot;}</span>
+
+<span class="c1"># Pointwise scoring</span>
+<span class="n">scorer</span> <span class="o">=</span> <span class="n">PointwiseJudge</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">scorer</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="s2">&quot;Paris is the capital.&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">=</span><span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">)</span>
+<span class="c1"># {&quot;score&quot;: 0.9, &quot;reason&quot;: &quot;...&quot;}</span>
+
+<span class="c1"># Multi-judge ensemble</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiJudgeEnsemble</span>
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">MultiJudgeEnsemble</span><span class="p">([</span>
+    <span class="n">PairwiseJudge</span><span class="p">(</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">),</span>
+    <span class="n">PairwiseJudge</span><span class="p">(</span><span class="s2">&quot;claude-3-opus&quot;</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">ensemble</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">answer_a</span><span class="p">,</span> <span class="n">answer_b</span><span class="p">,</span> <span class="n">question</span><span class="p">)</span>
+<span class="c1"># {&quot;majority_winner&quot;: &quot;A&quot;, &quot;agreement&quot;: 0.67, ...}</span>
+
+<span class="c1"># Judge calibration</span>
+<span class="n">cal</span> <span class="o">=</span> <span class="n">JudgeCalibration</span><span class="p">()</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">judge</span><span class="p">)</span>
+<span class="c1"># {&quot;position_bias&quot;: 0.05, &quot;consistency&quot;: 0.95, ...}</span>
+</code></pre>
+</div>
+
+<h3 id="statistical-significance">Statistical Significance</h3>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap_ci</span><span class="p">,</span> <span class="n">compare_models</span>
+
+<span class="n">ci</span> <span class="o">=</span> <span class="n">bootstrap_ci</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">num_resamples</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+<span class="c1"># {&quot;estimate&quot;: 0.72, &quot;lower&quot;: 0.68, &quot;upper&quot;: 0.76, &quot;std_err&quot;: 0.02}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">compare_models</span><span class="p">(</span><span class="n">model_a_scores</span><span class="p">,</span> <span class="n">model_b_scores</span><span class="p">)</span>
+<span class="c1"># {&quot;win_rate&quot;: 0.65, &quot;p_value&quot;: 0.003, &quot;mean_a&quot;: 0.72, &quot;mean_b&quot;: 0.68, ...}</span>
+</code></pre>
+</div>
+
+<h3 id="prompt-robustness">Prompt Robustness</h3>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptVariance</span>
+
+<span class="n">pv</span> <span class="o">=</span> <span class="n">PromptVariance</span><span class="p">(</span><span class="n">model_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">prompt</span><span class="p">:</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="s2">&quot;What is 2+2?&quot;</span><span class="p">)</span>
+<span class="c1"># {&quot;num_variants&quot;: 7, &quot;output_length_mean&quot;: 5.0, &quot;outputs&quot;: [...], ...}</span>
+</code></pre>
+</div>
+
+<h2 id="cli">CLI</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="c1"># Score a single output</span>
+juryeval<span class="w"> </span>score<span class="w"> </span>--question<span class="w"> </span><span class="s2">&quot;What is 2+2?&quot;</span><span class="w"> </span>--output<span class="w"> </span><span class="s2">&quot;4&quot;</span>
+
+<span class="c1"># Compare two outputs</span>
+juryeval<span class="w"> </span>compare<span class="w"> </span>--question<span class="w"> </span><span class="s2">&quot;Capital of France?&quot;</span><span class="w"> </span>--output-a<span class="w"> </span><span class="s2">&quot;Paris&quot;</span><span class="w"> </span>--output-b<span class="w"> </span><span class="s2">&quot;London&quot;</span>
+
+<span class="c1"># Evaluate a dataset</span>
+juryeval<span class="w"> </span>evaluate<span class="w"> </span>--metric<span class="w"> </span>classification<span class="w"> </span>--predictions<span class="w"> </span>preds.json<span class="w"> </span>--references<span class="w"> </span>refs.json
+
+<span class="c1"># Judge calibration</span>
+juryeval<span class="w"> </span>calibrate<span class="w"> </span>--model<span class="w"> </span>gpt-4
+
+<span class="c1"># Prompt sensitivity analysis</span>
+juryeval<span class="w"> </span>prompt<span class="w"> </span>--question<span class="w"> </span><span class="s2">&quot;Explain AI&quot;</span><span class="w"> </span>--num-variants<span class="w"> </span><span class="m">5</span>
+</code></pre>
+</div>
+
+<h2 id="framework-integrations">Framework Integrations</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Framework</th>
+  <th>Setup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>lm-eval-harness</strong></td>
+  <td><code>pip install juryeval[lmeval]</code> then <code>from juryeval.lmeval import register_all; register_all()</code></td>
+</tr>
+<tr>
+  <td><strong>DeepEval</strong></td>
+  <td><code>pip install deepeval[juryeval]</code> then <code>from deepeval.metrics.juryeval import JuryEvalMetric</code></td>
+</tr>
+<tr>
+  <td><strong>Lighteval</strong></td>
+  <td><code>pip install lighteval[juryeval]</code> then use <code>JuryEvalPointwiseJudge</code> / <code>JuryEvalPairwiseJudge</code> metrics</td>
+</tr>
+<tr>
+  <td><strong>LangChain</strong></td>
+  <td><code>pip install langchain[juryeval]</code></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="development">Development</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pytest
+pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+</code></pre>
+</div>
+
+<p>Source: <a href="https://github.com/pydev42/juryeval">https://github.com/pydev42/juryeval</a>
+Documentation: <a href="https://pydev42.github.io/juryeval/">https://pydev42.github.io/juryeval/</a>
+License: MIT</p>
 </div>
 
                         <input id="mod-juryeval-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-juryeval-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;Lightweight NLP/LLM evaluation toolkit.</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">MicroEval provides metrics, LLM-as-Judge infrastructure, statistical</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">significance testing, and prompt robustness analysis — designed as a</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="sd">shared dependency for evaluation frameworks like LM Eval Harness,</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="sd">OpenCompass, and Lighteval.</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="sd">Install:</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">    ``pip install juryeval``</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a>
-</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="sd">    Optional feature sets:</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">    - ``juryeval[judge]`` — LLM-as-Judge (openai)</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="sd">    - ``juryeval[semantic]`` — embedding similarity (sentence-transformers)</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="sd">    - ``juryeval[lmeval]`` — lm-eval-harness integration</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">    - ``juryeval[full]`` — all metrics (sklearn, sacrebleu, transformers, etc.)</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">    - ``juryeval[all]`` — everything</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">Quick Start:</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">    **Metrics:**</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">    &gt;&gt;&gt; from juryeval import eval_classification, perplexity, bert_score</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">    &gt;&gt;&gt; eval_classification([&quot;pos&quot;, &quot;neg&quot;], [&quot;pos&quot;, &quot;pos&quot;])</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">    {&#39;accuracy&#39;: 0.5, &#39;f1&#39;: 0.5}</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">    &gt;&gt;&gt; perplexity(&quot;This is a sentence.&quot;)</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">    102.5  # (approximate)</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;Lightweight NLP/LLM evaluation toolkit for metrics, LLM-as-Judge,</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="sd">statistical significance testing, prompt robustness analysis, and CLI.</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">Designed for fast smoke-tests, demos, and as a drop-in dependency for</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="sd">frameworks like LM Eval Harness, DeepEval, Lighteval, and LangChain.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">## Install</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">```bash</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="sd">pip install juryeval</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="sd">```</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="sd">Optional extras:</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">| Extra | What you get |</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">|-------|-------------|</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="sd">| `[judge]` | LLM-as-Judge (openai) |</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">| `[semantic]` | Embedding similarity (sentence-transformers) |</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="sd">| `[lmeval]` | lm-eval-harness integration |</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">| `[full]` | All metrics (sklearn, sacrebleu, transformers, torch, etc.) |</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">| `[all]` | Everything |</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">## Python API</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">### Metrics</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">    **LLM-as-Judge:**</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">    &gt;&gt;&gt; from juryeval import PairwiseJudge, JudgeCalibration</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">    &gt;&gt;&gt; judge = PairwiseJudge(&quot;gpt-4&quot;)</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">    &gt;&gt;&gt; judge.compare(&quot;Paris is capital.&quot;, &quot;It&#39;s Paris.&quot;, &quot;What is the capital of France?&quot;)</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    {&#39;winner&#39;: &#39;A&#39;, &#39;score&#39;: 1.0, &#39;reason&#39;: &#39;...&#39;}</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">    &gt;&gt;&gt; JudgeCalibration().evaluate(judge)</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">    {&#39;position_bias&#39;: 0.05, &#39;consistency&#39;: 0.95, ...}</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>
-</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">    **Statistical Significance:**</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">    &gt;&gt;&gt; from juryeval import bootstrap_ci, compare_models</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">    &gt;&gt;&gt; bootstrap_ci([1.0, 2.0, 3.0, 4.0, 5.0], num_resamples=1000)</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">    {&#39;estimate&#39;: 3.0, &#39;lower&#39;: 2.0, &#39;upper&#39;: 4.0, ...}</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="sd">    **Prompt Robustness:**</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">    &gt;&gt;&gt; from juryeval import PromptVariance</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="sd">    &gt;&gt;&gt; pv = PromptVariance(model_fn=lambda p: &quot;output&quot;)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="sd">    &gt;&gt;&gt; pv.analyze(&quot;What is 2+2?&quot;, num_variants=3)</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">    {&#39;num_variants&#39;: 3, &#39;output_length_mean&#39;: 6.0, ...}</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">```python</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">from juryeval import (</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">    eval_classification, eval_translation, eval_summarization,</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">    perplexity, flesch_kincaid, bert_score,</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">)</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">acc_f1 = eval_classification(preds=[&quot;pos&quot;, &quot;neg&quot;], refs=[&quot;pos&quot;, &quot;pos&quot;])</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">bleu   = eval_translation(preds=[&quot;hello world&quot;], refs=[&quot;bonjour le monde&quot;])</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">rouge  = eval_summarization(preds=[&quot;summary&quot;], refs=[&quot;reference&quot;])</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">ppl    = perplexity(&quot;This is a sentence.&quot;)</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">fk     = flesch_kincaid(&quot;This is easy to read.&quot;)</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">bs     = bert_score(preds=[&quot;answer&quot;], refs=[&quot;reference&quot;])</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">```</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">### LLM-as-Judge</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="sd">```python</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">from juryeval import PairwiseJudge, PointwiseJudge, MultiJudgeEnsemble, JudgeCalibration</span>
 </span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd">    **LM Eval Harness Integration:**</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">    &gt;&gt;&gt; from juryeval.lmeval import register_all</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">    &gt;&gt;&gt; register_all()  # registers pairwise_judge, pointwise_judge metrics</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a><span class="sd">Source: https://github.com/liodon-ai/MicroEval</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">Documentation: https://liodon-ai.github.io/MicroEval/</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">juryeval.lmeval.metrics</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_lmeval_metrics</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="c1"># Hide implementation details from docs</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="n">__pdoc__</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>    <span class="s2">&quot;metrics.fluency._load_gpt2&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>    <span class="s2">&quot;metrics.fluency._tokenizer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>    <span class="s2">&quot;metrics.fluency._model&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>    <span class="s2">&quot;metrics.fluency._count_syllables&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>    <span class="s2">&quot;metrics.semantic._load_encoder&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>    <span class="s2">&quot;metrics.semantic._encoder&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>    <span class="s2">&quot;metrics.semantic._SENTENCE_TRANSFORMERS_AVAILABLE&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="s2">&quot;judges.pairwise._call_judge&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="s2">&quot;judges.pairwise._parse_result&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>    <span class="s2">&quot;judges.pairwise.DEFAULT_PAIRWISE_PROMPT&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="s2">&quot;judges.pointwise._call_judge&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>    <span class="s2">&quot;judges.pointwise._parse_result&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>    <span class="s2">&quot;judges.pointwise.DEFAULT_POINTWISE_PROMPT&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>    <span class="s2">&quot;judges.calibration._measure_position_bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>    <span class="s2">&quot;judges.calibration._measure_consistency&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>    <span class="s2">&quot;judges.calibration._measure_length_bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>    <span class="s2">&quot;judges.calibration._measure_self_enhancement&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>    <span class="s2">&quot;lmeval.metrics._mean&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>    <span class="s2">&quot;lmeval.metrics._registered&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>    <span class="s2">&quot;prompt.sensitivity.DEFAULT_TEMPLATES&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>    <span class="s2">&quot;prompt.sensitivity._compute_stats&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a><span class="p">}</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="n">eval_classification</span><span class="p">,</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>    <span class="n">eval_translation</span><span class="p">,</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>    <span class="n">eval_summarization</span><span class="p">,</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="n">perplexity</span><span class="p">,</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="n">flesch_kincaid</span><span class="p">,</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="n">bert_score</span><span class="p">,</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="n">semantic_similarity</span><span class="p">,</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a><span class="p">)</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.judges</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairwiseJudge</span><span class="p">,</span> <span class="n">PointwiseJudge</span><span class="p">,</span> <span class="n">MultiJudgeEnsemble</span><span class="p">,</span> <span class="n">JudgeCalibration</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.significance</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap_ci</span><span class="p">,</span> <span class="n">bootstrap_pvalue</span><span class="p">,</span> <span class="n">win_rate</span><span class="p">,</span> <span class="n">compare_models</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.prompt</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptVariance</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>
-</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>    <span class="s2">&quot;eval_classification&quot;</span><span class="p">,</span>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>    <span class="s2">&quot;eval_translation&quot;</span><span class="p">,</span>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="s2">&quot;eval_summarization&quot;</span><span class="p">,</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="s2">&quot;perplexity&quot;</span><span class="p">,</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="s2">&quot;flesch_kincaid&quot;</span><span class="p">,</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="s2">&quot;bert_score&quot;</span><span class="p">,</span>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>    <span class="s2">&quot;semantic_similarity&quot;</span><span class="p">,</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>    <span class="s2">&quot;PairwiseJudge&quot;</span><span class="p">,</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>    <span class="s2">&quot;PointwiseJudge&quot;</span><span class="p">,</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="s2">&quot;MultiJudgeEnsemble&quot;</span><span class="p">,</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>    <span class="s2">&quot;JudgeCalibration&quot;</span><span class="p">,</span>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="s2">&quot;bootstrap_ci&quot;</span><span class="p">,</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="s2">&quot;bootstrap_pvalue&quot;</span><span class="p">,</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="s2">&quot;win_rate&quot;</span><span class="p">,</span>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="s2">&quot;compare_models&quot;</span><span class="p">,</span>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>    <span class="s2">&quot;PromptVariance&quot;</span><span class="p">,</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="p">]</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd"># Pairwise comparison</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">judge = PairwiseJudge(&quot;gpt-4&quot;)</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">result = judge.compare(</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">    answer_a=&quot;Paris is the capital of France.&quot;,</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a><span class="sd">    answer_b=&quot;It&#39;s Paris.&quot;,</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">    question=&quot;What is the capital of France?&quot;,</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="sd">)</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="sd"># {&quot;winner&quot;: &quot;A&quot;, &quot;score&quot;: 1.0, &quot;reason&quot;: &quot;...&quot;}</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="sd"># Pointwise scoring</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="sd">scorer = PointwiseJudge(&quot;gpt-4&quot;)</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="sd">result = scorer.score(&quot;Paris is the capital.&quot;, question=&quot;What is the capital of France?&quot;)</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="sd"># {&quot;score&quot;: 0.9, &quot;reason&quot;: &quot;...&quot;}</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a><span class="sd"># Multi-judge ensemble</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="sd">from juryeval import MultiJudgeEnsemble</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="sd">ensemble = MultiJudgeEnsemble([</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a><span class="sd">    PairwiseJudge(&quot;gpt-4&quot;),</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a><span class="sd">    PairwiseJudge(&quot;claude-3-opus&quot;),</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="sd">])</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="sd">result = ensemble.compare(answer_a, answer_b, question)</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="sd"># {&quot;majority_winner&quot;: &quot;A&quot;, &quot;agreement&quot;: 0.67, ...}</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a><span class="sd"># Judge calibration</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a><span class="sd">cal = JudgeCalibration()</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="sd">report = cal.evaluate(judge)</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="sd"># {&quot;position_bias&quot;: 0.05, &quot;consistency&quot;: 0.95, ...}</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="sd">```</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a><span class="sd">### Statistical Significance</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="sd">```python</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a><span class="sd">from juryeval import bootstrap_ci, compare_models</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a><span class="sd">ci = bootstrap_ci(scores, num_resamples=2000)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a><span class="sd"># {&quot;estimate&quot;: 0.72, &quot;lower&quot;: 0.68, &quot;upper&quot;: 0.76, &quot;std_err&quot;: 0.02}</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="sd">result = compare_models(model_a_scores, model_b_scores)</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a><span class="sd"># {&quot;win_rate&quot;: 0.65, &quot;p_value&quot;: 0.003, &quot;mean_a&quot;: 0.72, &quot;mean_b&quot;: 0.68, ...}</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="sd">```</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a><span class="sd">### Prompt Robustness</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a><span class="sd">```python</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a><span class="sd">from juryeval import PromptVariance</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a><span class="sd">pv = PromptVariance(model_fn=lambda prompt: &quot;output&quot;)</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a><span class="sd">report = pv.analyze(&quot;What is 2+2?&quot;)</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="sd"># {&quot;num_variants&quot;: 7, &quot;output_length_mean&quot;: 5.0, &quot;outputs&quot;: [...], ...}</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a><span class="sd">```</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a><span class="sd">## CLI</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a><span class="sd">```bash</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a><span class="sd"># Score a single output</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="sd">juryeval score --question &quot;What is 2+2?&quot; --output &quot;4&quot;</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="sd"># Compare two outputs</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="sd">juryeval compare --question &quot;Capital of France?&quot; --output-a &quot;Paris&quot; --output-b &quot;London&quot;</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a><span class="sd"># Evaluate a dataset</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="sd">juryeval evaluate --metric classification --predictions preds.json --references refs.json</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd"># Judge calibration</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">juryeval calibrate --model gpt-4</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd"># Prompt sensitivity analysis</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">juryeval prompt --question &quot;Explain AI&quot; --num-variants 5</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="sd">```</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">## Framework Integrations</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="sd">| Framework | Setup |</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="sd">|-----------|-------|</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="sd">| **lm-eval-harness** | `pip install juryeval[lmeval]` then `from juryeval.lmeval import register_all; register_all()` |</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">| **DeepEval** | `pip install deepeval[juryeval]` then `from deepeval.metrics.juryeval import JuryEvalMetric` |</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">| **Lighteval** | `pip install lighteval[juryeval]` then use `JuryEvalPointwiseJudge` / `JuryEvalPairwiseJudge` metrics |</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">| **LangChain** | `pip install langchain[juryeval]` |</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">## Development</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="sd">```bash</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a><span class="sd">pip install pytest</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">pytest tests/ -v</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">```</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">Source: https://github.com/pydev42/juryeval</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">Documentation: https://pydev42.github.io/juryeval/</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">License: MIT</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">juryeval.lmeval.metrics</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_lmeval_metrics</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a><span class="c1"># Hide implementation details from docs</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a><span class="n">__pdoc__</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>    <span class="s2">&quot;metrics.fluency._load_gpt2&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="s2">&quot;metrics.fluency._tokenizer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>    <span class="s2">&quot;metrics.fluency._model&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>    <span class="s2">&quot;metrics.fluency._count_syllables&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>    <span class="s2">&quot;metrics.semantic._load_encoder&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="s2">&quot;metrics.semantic._encoder&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>    <span class="s2">&quot;metrics.semantic._SENTENCE_TRANSFORMERS_AVAILABLE&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>    <span class="s2">&quot;judges.pairwise._call_judge&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>    <span class="s2">&quot;judges.pairwise._parse_result&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>    <span class="s2">&quot;judges.pairwise.DEFAULT_PAIRWISE_PROMPT&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>    <span class="s2">&quot;judges.pointwise._call_judge&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>    <span class="s2">&quot;judges.pointwise._parse_result&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>    <span class="s2">&quot;judges.pointwise.DEFAULT_POINTWISE_PROMPT&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>    <span class="s2">&quot;judges.calibration._measure_position_bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>    <span class="s2">&quot;judges.calibration._measure_consistency&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>    <span class="s2">&quot;judges.calibration._measure_length_bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>    <span class="s2">&quot;judges.calibration._measure_self_enhancement&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>    <span class="s2">&quot;lmeval.metrics._mean&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>    <span class="s2">&quot;lmeval.metrics._registered&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>    <span class="s2">&quot;prompt.sensitivity.DEFAULT_TEMPLATES&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>    <span class="s2">&quot;prompt.sensitivity._compute_stats&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="p">}</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>    <span class="n">eval_classification</span><span class="p">,</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="n">eval_translation</span><span class="p">,</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>    <span class="n">eval_summarization</span><span class="p">,</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>    <span class="n">perplexity</span><span class="p">,</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>    <span class="n">flesch_kincaid</span><span class="p">,</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>    <span class="n">bert_score</span><span class="p">,</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>    <span class="n">semantic_similarity</span><span class="p">,</span>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a><span class="p">)</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.judges</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairwiseJudge</span><span class="p">,</span> <span class="n">PointwiseJudge</span><span class="p">,</span> <span class="n">MultiJudgeEnsemble</span><span class="p">,</span> <span class="n">JudgeCalibration</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.significance</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap_ci</span><span class="p">,</span> <span class="n">bootstrap_pvalue</span><span class="p">,</span> <span class="n">win_rate</span><span class="p">,</span> <span class="n">compare_models</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">juryeval.prompt</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptVariance</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>    <span class="s2">&quot;eval_classification&quot;</span><span class="p">,</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>    <span class="s2">&quot;eval_translation&quot;</span><span class="p">,</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>    <span class="s2">&quot;eval_summarization&quot;</span><span class="p">,</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>    <span class="s2">&quot;perplexity&quot;</span><span class="p">,</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>    <span class="s2">&quot;flesch_kincaid&quot;</span><span class="p">,</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>    <span class="s2">&quot;bert_score&quot;</span><span class="p">,</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>    <span class="s2">&quot;semantic_similarity&quot;</span><span class="p">,</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>    <span class="s2">&quot;PairwiseJudge&quot;</span><span class="p">,</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>    <span class="s2">&quot;PointwiseJudge&quot;</span><span class="p">,</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>    <span class="s2">&quot;MultiJudgeEnsemble&quot;</span><span class="p">,</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>    <span class="s2">&quot;JudgeCalibration&quot;</span><span class="p">,</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>    <span class="s2">&quot;bootstrap_ci&quot;</span><span class="p">,</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>    <span class="s2">&quot;bootstrap_pvalue&quot;</span><span class="p">,</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>    <span class="s2">&quot;win_rate&quot;</span><span class="p">,</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>    <span class="s2">&quot;compare_models&quot;</span><span class="p">,</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="s2">&quot;PromptVariance&quot;</span><span class="p">,</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a><span class="p">]</span>
 </span></pre></div>
 
 

@@ -207,7 +207,7 @@ Raises
 
 .pdoc b,
 strong {
-    color: #d63384;
+    color: #ff79c6;
     font-weight: normal;
 }
 
@@ -302,13 +302,13 @@ nav.pdoc .module-list-button:hover {
 }
 
 .pdoc .pdoc-alert-warning {
-    color: black;
-    background-color: #d5a142;
-    border-color: black;
+    color: #f8f8f2;
+    background-color: #44475a;
+    border-color: #ffb86c;
 }
 
 .pdoc .pdoc-alert-note {
-    color: black;
-    background-color: #6aa3f9;
-    border-color: black;
+    color: #f8f8f2;
+    background-color: #44475a;
+    border-color: #8be9fd;
 }
