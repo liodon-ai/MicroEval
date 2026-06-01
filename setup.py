@@ -8,7 +8,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Liodon AI",
     author_email="info@liodon.ai",
-    url="https://github.com/liodon-ai/juryeval",
+    url="https://github.com/pydev42/juryeval",
     license="MIT",
     packages=find_packages(),
     entry_points={
