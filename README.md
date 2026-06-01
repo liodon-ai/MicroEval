@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="juryeval" width="400">
+</p>
+
 # juryeval
 
 Lightweight NLP/LLM evaluation toolkit: metrics, LLM-as-Judge, statistical significance testing, prompt robustness analysis, and a CLI.
