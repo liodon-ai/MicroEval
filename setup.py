@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="juryeval",
-    version="0.5.1",
+    version="0.5.2",
     description="Lightweight NLP/LLM evaluation toolkit — metrics, judges, significance testing",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
